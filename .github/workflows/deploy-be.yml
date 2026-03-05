@@ -54,6 +54,6 @@ jobs:
           echo "Syncing with option: $OPT"
 
           # 各拠点を叩く（末尾に $OPT を付加）
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs-labo.com/.sync.acfinder.php$OPT"
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://branch-a.com/.sync.acfinder.php$OPT"
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://branch-b.com/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
+          #curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.kabe.info/acfinder/.sync.acfinder.php$OPT"
+          #curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://noyaku.ebb.jp/acfinder/.sync.acfinder.php$OPT"
