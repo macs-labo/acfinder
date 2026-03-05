@@ -1,0 +1,44 @@
+name: Dynamic Version Deploy
+
+on:
+  push:
+    paths:
+      - 'header.js'  # バージョン番号が書き換わった時をトリガーにする
+
+jobs:
+  deploy-by-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Version and Unzip
+        run: |
+          # header.js から '2024.0305.1200' のような部分を抽出
+          APP_VER=$(grep "const appVer =" header.js | sed -E "s/.*'(.+)'.*/\1/")
+          ZIP_FILE="acfinder.${APP_VER}.zip"
+          
+          echo "Target Version: $APP_VER"
+          echo "Target ZIP: $ZIP_FILE"
+
+          if [ -f "$ZIP_FILE" ]; then
+            unzip -o "$ZIP_FILE" -d ./
+            # 解凍後、自分自身（GitHub）に展開済みファイルを反映
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add .
+            git diff --cached --quiet || git commit -m "Auto deploy version: $APP_VER"
+            git push
+          else
+            echo "Error: $ZIP_FILE does not exist!"
+            exit 1
+          fi
+
+      - name: Trigger Remote Sync (Main & Branches)
+        run: |
+          # 本室と分室を順番に叩く（BASIC認証情報を Secret から使用）
+          curl -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php"
+          #curl -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://branch-a.com/.sync.acfinder.php"
