@@ -3,7 +3,13 @@ name: Dynamic Version Deploy
 on:
   push:
     paths:
-      - 'header.js'  # バージョン番号が書き換わった時をトリガーにする
+      - 'header.js'
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: '実験室を強制更新（?update=1）しますか？'
+        type: boolean
+        default: false
 
 jobs:
   deploy-by-version:
@@ -39,6 +45,15 @@ jobs:
 
       - name: Trigger Remote Sync (Main & Branches)
         run: |
-          # 本室と分室を順番に叩く（BASIC認証情報を Secret から使用）
-          curl -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php"
-          #curl -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://branch-a.com/.sync.acfinder.php"
+          # 手動実行でチェックを入れた場合のみ '?update=1' をセット
+          OPT=""
+          if [ "${{ github.event.inputs.force_update }}" == "true" ]; then
+            OPT="?update=1"
+          fi
+
+          echo "Syncing with option: $OPT"
+
+          # 各拠点を叩く（末尾に $OPT を付加）
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs-labo.com/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://branch-a.com/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://branch-b.com/.sync.acfinder.php$OPT"
