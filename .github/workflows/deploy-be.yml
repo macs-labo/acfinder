@@ -1,25 +1,25 @@
-name: Dynamic Version Deploy
+name: ACFinderBE Global Deploy
 
 on:
   push:
     paths:
-      - 'header.js'
+      - 'acfinder[0-9]*.zip' # acfinder2026.0306.1200.zip 等の追加で発動
   workflow_dispatch:
     inputs:
       run_mode:
-        description: '実行モードを選択してください'
+        description: '実行モード'
         type: choice
         options:
-          - 'full_deploy'  # ZIP展開＋リポジトリ更新＋サーバー同期
+          - 'full_deploy'  # ZIP展開 ＋ リポジトリ更新 ＋ サーバー同期
           - 'sync_only'    # サーバー同期のみ
         default: 'full_deploy'
       force_update:
-        description: '実験室を強制更新（?update=1）しますか？'
+        description: '強制更新（?update=1）しますか？'
         type: boolean
         default: false
 
 jobs:
-  deploy-by-version:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -28,32 +28,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract and Unzip (Conditional)
-        # Push時、または手動で full_deploy を選択した時だけ実行
+      - name: Process ZIP and Update Repository
+        # Push時、または手動で full_deploy を選択した時のみ実行
         if: github.event_name == 'push' || github.event.inputs.run_mode == 'full_deploy'
         run: |
-          APP_VER=$(grep "const appVer =" header.js | sed -E "s/.*'(.+)'.*/\1/")
-          ZIP_FILE="acfinder.${APP_VER}.zip"
-          if [ -f "$ZIP_FILE" ]; then
-            unzip -o "$ZIP_FILE" -d ./
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add .
-            git diff --cached --quiet || git commit -m "Manual/Auto deploy version: $APP_VER"
-            git push
+          # アルファベット順で一番最後（最新日付）のZIPを特定
+          TARGET_ZIP=$(ls -1 acfinder[0-9]*.zip | tail -n 1)
+          
+          if [ -z "$TARGET_ZIP" ]; then
+            echo "Error: ZIP file not found!"
+            exit 1
           fi
+
+          echo "Latest ZIP found: $TARGET_ZIP"
+          
+          # ZIPを解凍してリポジトリを展開
+          unzip -o "$TARGET_ZIP" -d ./
+          
+          # GitHubにコミット（[skip ci] で無限ループを鉄壁にガード）
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git diff --cached --quiet || git commit -m "Auto deploy from $TARGET_ZIP [skip ci]"
+          git push
 
       - name: Trigger Remote Sync
         run: |
-          # 手動実行でチェックを入れた場合のみ '?update=1' をセット
+          # 強制更新オプションの判定
           OPT=""
           if [ "${{ github.event.inputs.force_update }}" == "true" ]; then
             OPT="?update=1"
           fi
 
-          echo "Syncing with option: $OPT"
+          echo "Triggering sync with option: $OPT"
 
-          # 全拠点にリクエスト（ここはどのモードでも実行）
+          # 登録した Secret を使用して各拠点を叩く
           curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
           #curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.kabe.info/acfinder/.sync.acfinder.php$OPT"
           #curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://noyaku.ebb.jp/acfinder/.sync.acfinder.php$OPT"
