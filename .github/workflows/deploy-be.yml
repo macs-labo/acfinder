@@ -1,4 +1,65 @@
-name: ACFinderBE Global Deploy
+name: MacsDB CRON Job Updater Global Deploy
+
+on:
+  push:
+    paths:
+      - 'cron.zip'
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: '実行モード'
+        type: choice
+        options:
+          - 'full_deploy'
+          - 'sync_only'
+        default: 'full_deploy'
+      force_update:
+        description: '強制更新（?update=1）しますか？'
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    env:
+      TARGET_ZIP: "cron.zip"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Process ZIP and Update Repository
+        if: github.event_name == 'push' || github.event.inputs.run_mode == 'full_deploy'
+        run: |
+          # ファイルの存在確認をしてから解凍
+          if [ -f "${{ env.TARGET_ZIP }}" ]; then
+            unzip -o "${{ env.TARGET_ZIP }}" -d ./
+            
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add .
+            git diff --cached --quiet || git commit -m "Auto deploy from ${{ env.TARGET_ZIP }} [skip ci]"
+            git push
+          else
+            echo "Error: ${{ env.TARGET_ZIP }} not found."
+            exit 1
+          fi
+
+      - name: Trigger Remote Sync
+        run: |
+          OPT=""
+          if [ "${{ github.event.inputs.force_update }}" == "true" ]; then
+            OPT="?update=1"
+          fi
+
+          echo "Triggering sync with option: $OPT"
+
+          # 各拠点を叩く（コメントアウトされた行も整理）
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
+          # curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.kabe.info/acfinder/.sync.acfinder.php$OPT"
+          # curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://noyaku.ebb.jp/acfinder/.sync.acfinder.php$OPT"name: ACFinderBE Global Deploy
 
 on:
   push:
