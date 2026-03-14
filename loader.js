@@ -10,7 +10,7 @@ let lastUpdate = '';
 
 
 const isMacs = window.location.hostname.match(/^(macs|noyaku)\./); // MACS サイト判定: ホスト名の先頭が macs. または noyaku.
-const datdir = isMacs ? '../data/' : 'const datdir = isMacs ? '../data/' : 'https://macs-labo.github.io/data/';  // MACS サイト以外では github から取得
+const datdir = isMacs ? '../data/' : 'https://macs-labo.github.io/data/'; // MACS サイト以外では github から取得
 const maindb = 'acis';
 const subdb  = 'spec';
 const local  = window.location.protocol.indexOf('file:') === 0;
@@ -1193,7 +1193,7 @@ window.addEventListener('DOMContentLoaded', function() {
 		titleBar.appendChild(titleWrapper);
 		const subtitle = document.createElement('h2');
 		const year = new Date().getFullYear();
-		subtitle.innerHTML = `Agricultural Chemicals Finder / Browser Edition<br/>&copy; 2025-${year} TEAM ACFinder / Licensed under the MIT License`;
+		subtitle.innerHTML = `Agricultural Chemicals Finder / Browser Edition<br/>&copy; 2025-${year} TEAM ACFinder, Lisenced under the MIT License`;
 		titleBar.appendChild(subtitle);
 		const dataWrapper= document.createElement('div');
 		const dbUpdate =  document.createElement('p');
