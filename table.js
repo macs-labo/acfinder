@@ -378,6 +378,43 @@ function outputTable(selector, result, option = {}) {
 	// コンテキストメニュー項目の定義
 	const contextMenuItems = {
 		items: {
+			'filter_by_cell_value': {
+				name: 'このセルの値で絞り込み',
+				hidden: function () {
+					// 複数セル選択時は非表示
+					if (!this.getSelectedRange() || this.getSelectedRange().length > 1) {
+						return true;
+					}
+					const sel = this.getSelectedRange()[0];
+					return sel.from.row !== sel.to.row || sel.from.col !== sel.to.col;
+				},
+				callback: function (key, selection, event) {
+					const sel = selection[0];
+					const row = sel.start.row;
+					const col = sel.start.col;
+
+					const value = this.getDataAtCell(row, col);
+					if (value === null || value === undefined || value === '') {
+						return;
+					}
+
+					const filtersPlugin = this.getPlugin('filters');
+					const visualColIndex = col;
+
+					// いったんこの列の条件をクリアしてから「等しい」で再設定
+					filtersPlugin.removeConditions(visualColIndex);
+					filtersPlugin.addCondition(visualColIndex, 'eq', [value]);
+					filtersPlugin.filter(); // フィルタ実行
+
+					// 既存の後処理と同じことをしておくとレイアウトが崩れにくい
+					hideEmptyColumns(this);
+					resetContainerWidth(this);
+					updatePagination(this);
+					updateContainerRect(this);
+					updateRowsSelect(this);
+					updatePageSize(this);
+				}
+			},
 			'search_in_yakuzai_tab': {
 				name: '薬剤タブで検索',
 				hidden: function() {
