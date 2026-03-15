@@ -10,7 +10,7 @@ let lastUpdate = '';
 
 
 const isMacs = window.location.hostname.match(/^(macs|noyaku)\./); // MACS サイト判定: ホスト名の先頭が macs. または noyaku.
-const datdir = isMacs ? '../data/' : 'https://macs-labo.github.io/data/'; // MACS サイト以外では github から取得
+const datdir = isMacs ? '../data/' : 'https://raw.githubusercontent.com/macs-labo/macs-labo.github.io/main/data/'; // MACS サイト以外では github から取得
 const maindb = 'acis';
 const subdb  = 'spec';
 const local  = window.location.protocol.indexOf('file:') === 0;
