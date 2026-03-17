@@ -109,7 +109,7 @@ jobs:
           echo "Triggering sync with option: $OPT"
 
           # 各拠点を叩く
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.kabe.info/acfinder/.sync.acfinder.php$OPT"
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://noyaku.ebb.jp/acfinder/.sync.acfinder.php$OPT"
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.coresv.net/acfinder/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GH_TOKEN }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GH_TOKEN }}" "https://macs.kabe.info/acfinder/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GH_TOKEN }}" "https://noyaku.ebb.jp/acfinder/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GH_TOKEN }}" "https://macs.coresv.net/acfinder/.sync.acfinder.php$OPT"
