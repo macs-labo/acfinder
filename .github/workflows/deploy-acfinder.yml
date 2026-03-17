@@ -20,13 +20,13 @@ on:
         default: false
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       # --- STEP 1: リポジトリの更新 ---
@@ -57,13 +57,44 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto deploy from $TARGET_ZIP [skip ci]"
           git push
 
-      # --- STEP 2: 外部サーバー同期 ---
-      - name: Trigger Remote Sync
-        # Push時、または手動で full_deploy か sync_only を選択した時のみ実行
+      - name: Upload GitHub Pages artifact
         if: |
-          github.event_name == 'push' || 
-          github.event.inputs.run_mode == 'full_deploy' || 
-          github.event.inputs.run_mode == 'sync_only'
+          github.event_name == 'push' ||
+          github.event.inputs.run_mode == 'full_deploy' ||
+          github.event.inputs.run_mode == 'deploy_only'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy-pages:
+    needs: build
+    # Push時、または手動で full_deploy か deploy_only を選択した時のみ実行
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.run_mode == 'full_deploy' ||
+      github.event.inputs.run_mode == 'deploy_only'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  sync-external:
+    needs: build
+    # Push時、または手動で full_deploy か sync_only を選択した時のみ実行
+    if: |
+      github.event_name == 'push' ||
+      github.event.inputs.run_mode == 'full_deploy' ||
+      github.event.inputs.run_mode == 'sync_only'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Remote Sync
         run: |
           # 反映待ち（2分）
           echo "Waiting 120 seconds for GitHub infrastructure to reflect changes..."
