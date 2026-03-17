@@ -8,7 +8,6 @@ let db = null;
 let tables = []; // テーブルインスタンスを保持する配列
 let lastUpdate = '';
 
-
 const isMacs = window.location.hostname.match(/^(macs|noyaku)\./); // MACS サイト判定: ホスト名の先頭が macs. または noyaku.
 const datdir = isMacs ? '../data/' : 'https://raw.githubusercontent.com/macs-labo/macs-labo.github.io/main/data/'; // MACS サイト以外では github から取得
 const maindb = 'acis';
@@ -111,28 +110,34 @@ async function getServerTimestamp(serverUrl, timeout = 5000) {
 	const id = setTimeout(() => controller.abort(), timeout);
 
 	try {
-		// 1. HEAD リクエスト (no-cache)
-		let response = await fetch(serverUrl, { method: 'HEAD', cache: 'no-cache', signal: controller.signal })
-			.catch(e => {
-				if (e.name === 'AbortError') throw e;
-				// 2. HEAD リクエスト (cache 許可)
-				return fetch(serverUrl, { method: 'HEAD', signal: controller.signal });
-			});
+		if (serverUrl.includes('raw.githubusercontent.com')) {
+			// GitHub APIを使用してコミット情報を取得
+			// URL例: https://raw.githubusercontent.com/user/repo/main/path/to/file
+			// API例: https://api.github.com/repos/user/repo/commits?path=path/to/file&page=1&per_page=1
+			const parts = serverUrl.replace('https://raw.githubusercontent.com/', '').split('/');
+			const owner = parts[0];
+			const repo = parts[1];
+			const branch = parts[2];
+			const filePath = parts.slice(3).join('/');
 
-		if (!response.ok) {
-			// 3. GET リクエスト (no-cache) - HEAD が失敗した場合のフォールバック
-			response = await fetch(serverUrl, { method: 'GET', cache: 'no-cache', signal: controller.signal })
-				.catch(e => {
-					if (e.name === 'AbortError') throw e;
-					// 4. GET リクエスト (cache 許可)
-					return fetch(serverUrl, { method: 'GET', signal: controller.signal });
-				});
-		}
-
-		if (response.ok) {
-			return response.headers.get('Last-Modified');
+			const apiUrl = `https://api.github.com/repos/${owner}/${repo}/commits?path=${filePath}&sha=${branch}&per_page=1`;
+			
+			const response = await fetch(apiUrl, { cache: 'no-cache', signal: controller.signal });
+			if (response.ok) {
+				const commits = await response.json();
+				if (commits && commits.length > 0) {
+					return commits[0].commit.committer.date; // ISO 8601形式 (e.g. 2023-10-01T12:00:00Z)
+				}
+			}
+		} else {
+			// 通常のHTTP HEADリクエスト
+			let response = await fetch(serverUrl, { method: 'HEAD', cache: 'no-cache', signal: controller.signal });
+			if (response.ok) {
+				return response.headers.get('Last-Modified');
+			}
 		}
 	} catch (error) {
+		console.warn(`[getServerTimestamp] Could not get timestamp for ${serverUrl}.`, error);
 		// エラー時は null を返す
 	} finally {
 		clearTimeout(id);
