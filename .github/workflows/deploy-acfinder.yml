@@ -96,9 +96,12 @@ jobs:
     steps:
       - name: Trigger Remote Sync
         run: |
-          # 反映待ち（2分）
-          echo "Waiting 120 seconds for GitHub infrastructure to reflect changes..."
-          sleep 120
+          # GitHub CDN の反映待ち
+          # push 時、または run_mode が 'full_deploy' の場合のみ待機
+          if [[ "${{ github.event_name }}" == "push" || "${{ github.event.inputs.run_mode }}" == "full_deploy" ]]; then
+            echo "Waiting 120 seconds for GitHub to reflect changes..."
+            sleep 120
+          fi
 
           # 強制更新オプションの判定
           OPT=""
