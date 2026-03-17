@@ -118,7 +118,7 @@ jobs:
           )
 
           # 各拠点を叩く
-          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
+          curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" "https://macs.xii.jp/acfinder/.sync.acfinder.php$OPT"
           curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://macs.kabe.info/acfinder/.sync.acfinder.php$OPT"
           curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://noyaku.ebb.jp/acfinder/.sync.acfinder.php$OPT"
           curl -s -u "${{ secrets.SYNC_USER }}:${{ secrets.SYNC_PASS }}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://macs.coresv.net/acfinder/.sync.acfinder.php$OPT"
