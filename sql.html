@@ -476,7 +476,6 @@ async function batchExecSQL(sql) {
 	}
 }
 
-
 function parseVariables(varText) {
 	const variables = new Map();
 	if (!varText) {
@@ -603,7 +602,11 @@ async function dispatchSQLExecution() {
 async function setupFileTree(zipFile = null) {
 	let zip, selectTitle;
 	if (zipFile) {
-		zip = await JSZip.loadAsync(zipFile);
+        zip = await JSZip.loadAsync(zipFile, {
+	        decodeFileName: function (bytes) {
+	    	    return smartDecode(bytes);
+    	    }
+        });
 		selectTitle = basename(zipFile.name);
 	} else {
 		const fcDB = await openDB('fileCacheDB');
@@ -637,7 +640,11 @@ async function setupFileTree(zipFile = null) {
 				return;
 			}
 		}
-		zip = await JSZip.loadAsync(blob);
+        zip = await JSZip.loadAsync(blob, {
+        	decodeFileName: function (bytes) {
+		        return smartDecode(bytes);
+	        }
+        });
 		//#tab-header から active タブ名を取得
 		// iframe内で実行されているかを判定
 		let activeTitle;
@@ -659,6 +666,46 @@ async function setupFileTree(zipFile = null) {
 
 	makeFileTree('#fileTree', zip, handleFileSelection, { hiddenComma: !debug, hiddenExt: !debug});
 
+}
+
+function cleanString(str) {
+	if (!str) return '';
+
+	return str
+		// BOM除去
+		.replace(/^\uFEFF/, '')
+
+		// 先頭の制御文字・NULL・空白除去
+		.replace(/^[\u0000-\u001F\s]+/, '')
+
+		// 末尾の制御文字・空白除去
+		.replace(/[\u0000-\u001F\s]+$/, '')
+
+		// パス区切りの正規化（念のため）
+		.replace(/\\/g, '/')
+
+		// 連続スラッシュ除去
+		.replace(/\/{2,}/g, '/');
+}
+
+function smartDecode(bytes) {
+	// まず UTF-8 (Strict) でデコードを試みる
+	try {
+		let utf8 = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+		// UTF-8 の場合のみ Unicode 正規化 (NFC) を適用 (Mac対策)
+		utf8 = utf8.normalize('NFC');
+		return cleanString(utf8);
+	} catch (e) {
+		// UTF-8 でなければ Shift_JIS としてデコード
+	}
+
+	// Shift_JIS (Fallback)
+	try {
+		const sjis = new TextDecoder('shift_jis').decode(bytes);
+		return cleanString(sjis);
+	} catch (e) {}
+
+	return '';
 }
 
 async function handleFileSelection(path) {

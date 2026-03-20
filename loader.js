@@ -111,14 +111,12 @@ async function getServerTimestamp(serverUrl, timeout = 5000) {
 
 	try {
 		if (serverUrl.includes('raw.githubusercontent.com')) {
-			// GitHub APIを使用してコミット情報を取得
+			// GitHub APIを使用して、ZIPファイル自体の最新コミット日時を取得
 			// URL例: https://raw.githubusercontent.com/user/repo/main/path/to/file
 			// API例: https://api.github.com/repos/user/repo/commits?path=path/to/file&page=1&per_page=1
 			const parts = serverUrl.replace('https://raw.githubusercontent.com/', '').split('/');
-			const owner = parts[0];
-			const repo = parts[1];
-			const branch = parts[2];
-			const filePath = parts.slice(3).join('/');
+			const [owner, repo, branch, ...pathParts] = parts;
+			const filePath = pathParts.join('/');
 
 			const apiUrl = `https://api.github.com/repos/${owner}/${repo}/commits?path=${filePath}&sha=${branch}&per_page=1`;
 			

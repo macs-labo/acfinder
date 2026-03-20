@@ -109,7 +109,7 @@ CREATE TEMP VIEW ttTekiyoSaku AS
     seibun4,keito4,kaisu4,(select if(count(*) > 0, mid, (select max(mid) from raccode where ippanmei = seibun4 group by ippanmei)) from raccode where ippanmei = seibun4 and cid = substr(idbyochu, 1, 1)) as mid4, 
     seibun5,keito5,kaisu5,(select if(count(*) > 0, mid, (select max(mid) from raccode where ippanmei = seibun5 group by ippanmei)) from raccode where ippanmei = seibun5 and cid = substr(idbyochu, 1, 1)) as mid5, 
     dokusei as seizaidokusei,yoto,koka,zaikei,ryakusho
-FROM tekiyo LEFT JOIN seizai;
+FROM tekiyo LEFT JOIN seizai using(bango);
 -- 作物タブ用
 -- 標準モード用 -----
 --  1 成分に総会使用回数における有効成分表示(省略型)
